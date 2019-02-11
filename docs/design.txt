@@ -1,0 +1,42 @@
+
+
+Use the standard Raspbian image as much as possible
+Add the minimal number of dirs/files needed to the stock image
+Rename the image to a local name with a version number
+Live in /opt/yhlsec inside the OS
+Use the rc.local to run the firstboot script
+firstboot should wait for an internal IP from DHCP
+Do the minimum work in firstboot
+Download the stage 2 setup script using wget, fall back to curl if need be
+Log everything to the root (/) directory
+Wait for the resize to finish?
+Use a firstboot status file in /
+Allow it to run again by setting a status file in /
+
+Do the following:
+
+apt-get update
+apt-get upgrade
+apt-get install local packages
+   uucp
+   ntpdate
+   others?
+reboot?
+Set DNS resolver?
+Set the hostname based on the MAC address
+Modify /etc/hosts to have the new host name
+Set the timezone
+Set up NTP
+Set the keyboard language
+Set the WiFi region
+Add the sysadmin account with
+   correct local group membership
+   ssh-keygen key
+   .ssh/authorized_keys for sysadmin pubkey
+   Standard password
+   Add bin directory
+   Modify .bashrc to include $HOME/bin   
+Set up log forwarding to the internl loghost
+Install webmin using defaults
+change the internal pi account password to a random one
+change the root account to a large random one

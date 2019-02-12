@@ -18,15 +18,31 @@ if [ "$_IP" ]; then
 fi
 
 
+#
+# LOCAL CHANGES
+#
 LOGFILE="/firstboot.log"
 BOOTSCRIPT="/root/firstboot.sh"
+BOOTFILE="/.firstboot"
 
-if [ -x $BOOTSCRIPT ]; then
-    echo "Running $BOOTSCRIPT" > $LOGFILE
-    $BOOTSCRIPT >> $LOGFILE 2>&1
-else
-    echo "NOT running $BOOTSCRIPT" > $LOGFILE
+# Run the firstboot if the state file is present
+# This is how you control if it's run
+# Setup removes this when finished successfully
+if [ -f $BOOTFILE ]; then
+
+    # Run firstboot if it's executable, another way to control it
+    if [ -x $BOOTSCRIPT ]; then
+        echo "Running $BOOTSCRIPT" > $LOGFILE
+        $BOOTSCRIPT >> $LOGFILE 2>&1
+    else
+        echo "NOT running $BOOTSCRIPT, not exectuable" > $LOGFILE
+        echo 0
+    fi
+else 
+    echo "NOT running firstboot script, state file NOT present"
+    exit 0
 fi
+# END LOCAL CHANGES
 
 
 exit 0

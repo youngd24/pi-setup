@@ -29,8 +29,13 @@
 
 
 ################################################################################
+# 
+# Various vim modelines to make Makefiles work correctly, notably tabs.
+# Yea yea, modelines are evil security things, get over it.
+#
 # vim: set noexpandtab:
 # vim: set syntax=makefile:
+#
 ################################################################################
 
 

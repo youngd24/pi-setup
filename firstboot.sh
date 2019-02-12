@@ -3,6 +3,9 @@
 #
 # firstboot.sh
 #
+# Script called from rc.local to wait for the network then download and run
+# a second stage installer.
+#
 ################################################################################
 #
 # Copyright (C) 2018 Darren Young <darren@yhlsecurity.com>
@@ -21,38 +24,50 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ################################################################################
+#
+# TODO/ISSUES:
+#
+#   * Should probably fall back to curl if wget fails.
+#   * Deal with logging messags a bit more cleanly.
+#   * Variablize things more (is that a word?).
+#   * Move more to functions and scope variables better.
+#
+################################################################################
 
 
 ################################################################################
-# VARIABLES
+#                              V A R I A B L E S
 ################################################################################
 x=0
 maxNetRetries=60
 netChkSleepTime=1
-setupUrl="https://raw.githubusercontent.com/youngd24/LabInstall/master/scripts/setup.sh"
+ghHost="htts://raw.githubusercontent.com"
+setupUrl="$ghHost/youngd24/LabInstall/master/scripts/setup.sh"
+dhcpInterface="eth0"
+dhcpNet="192.168"
 
 
 ################################################################################
-# FUNCTIONS
+#                              F U N C T I O N S
 ################################################################################
 
-
 ################################################################################
-# function to check if eth0 is on the correct internal subnet
-# this means DHCP worked and we're off the 169.254 net
+# Function to check if eth0 is on the correct internal subnet
+# This means DHCP worked and we're off the 169.254 net
+# This seems to take an average of around 40 seconds on a Pi-3B+
 ################################################################################
 hfNetChk () {
     echo "hfChkNet: checking network"
-    ifconfig eth0 | grep inet | grep -v inet6 | awk '{print $2}'
-    IP=`ifconfig eth0 | grep inet | grep -v inet6 | awk '{print $2}' | grep -q -F "192.168"`
-    ret=$?
+    ifconfig $dhcpInterface | grep inet | grep -v inet6 | awk '{print $2}'
+    local IP=`ifconfig eth0 | grep inet | grep -v inet6 | awk '{print $2}' | grep -q -F "$dhcpNet"`
+    local ret=$?
     return $ret
 }
 
 
 
 ################################################################################
-# MAIN
+#                                  M A I N
 ################################################################################
 
 # See if we're on RedHat/CentOS
@@ -73,8 +88,9 @@ else
 fi
 
 
-# check for successful DHCP on the 192.168 net
-# if so move on, else try again up to some number of times
+# Check for successful DHCP on the 192.168 net
+# If so move on, else try again up to some number of times
+# Why exit 47? Becuase I can. It's not 0.
 while ! hfNetChk
 do
     if [ "$x" -ge $maxNetRetries ]; then
@@ -93,10 +109,11 @@ echo "Getting stage 2 setup"
 
 # Pull down the setup script
 if [ -x "/usr/bin/wget" ]; then
+    echo "Retrieving setup script using wget: $setupUrl"
     wget $setupUrl
 else
     echo "wget not found, exiting"
 fi
 
-#
+# exiter
 exit 0

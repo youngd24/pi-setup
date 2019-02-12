@@ -3,6 +3,9 @@
 #
 # setup.sh
 #
+# Second stage setup script, modify as you see fit for local conditions.
+# Meant to be got(ten) from an HTTP server.
+#
 ###############################################################################
 #
 ###############################################################################
@@ -23,22 +26,33 @@
 # along with this program.  If not, see <https://www.gnu.org/licenses/>.
 #
 ###############################################################################
+#
+# TODO/ISSUES:
+#
+#   * Localize variables more in functions, global namespace pollution angers
+#     me to no end.
+#   * Added my usual RedHat/CentOS/Raspbian detection.
+#   * Variablize more things, especially command locations.
+#
+###############################################################################
 
-# Needed to run from systemd at startup
+
+###############################################################################
+#                             V A R I A B L E S
+###############################################################################
+
+# Used by dpkg-reconfigure to not display a UI
 DEBIAN_FRONTEND="noninteractive"; export DEBIAN_FRONTEND
-DEBUG="true"
 
-###############################################################################
+# Should probably add getopt() stuff for this
+DEBUG="true"                                # Produces copious messaging
 
-###############################################################################
-# VARIABLES
-###############################################################################
 # Locations
-LOGDIR="$DIRNAME/../log"
-LIBDIR="$DIRNAME/../lib"
-CRONTABDIR="/var/spool/cron/crontabs"
-TMPLDIR="$DIRNAME/../tmpl"
-BACKUPDIR="/backup"
+#LOGDIR="$DIRNAME/../log"
+#LIBDIR="$DIRNAME/../lib"
+#CRONTABDIR="/var/spool/cron/crontabs"
+#TMPLDIR="$DIRNAME/../tmpl"
+#BACKUPDIR="/backup"
 
 LOGFILE="setup.log"
 FIRSTBOOTFILE="/.firstboot"
@@ -54,7 +68,7 @@ TIMEZONEFILE="/etc/timezone"
 TIMEZONE="America/Chicago"
 
 ###############################################################################
-# FUNCTIONS
+#                             F U N C T I O N S
 ###############################################################################
 
 ###############################################################################
@@ -116,7 +130,8 @@ function debug() {
 
 
 ###############################################################################
-# Run a command
+# Run a command (relatively safely)
+# If you want to add additional security for stuff, add it here
 ###############################################################################
 function run_command() {
     debug "${FUNCNAME[0]}: entering"
@@ -152,7 +167,7 @@ function run_command() {
 function apt_update() {
     debug "${FUNCNAME[0]}(): entering"
     logmsg "Updating apt"
-    CMD="apt-get -q -y update"
+    local CMD="apt-get -q -y update"
     logmsg "Running command $CMD"
     run_command "$CMD"
 }
@@ -199,17 +214,10 @@ function set_hostname() {
     debug "${FUNCNAME[0]}(): entering"
     local MAC=`ifconfig eth0 | grep ether | awk '{print $2}' | awk -F: '{print $5$6}'`
     local HOSTNAME="pi-$MAC"
-    logmsg "Setting hostname => $HOSTNAME"
 
-    RET=$(grep $HOSTNAME $HOSTNAMEFILE)
-    RETVAL=$?
-    if [[ $RETVAL = 1 ]]; then
-        logmsg "Modifying $HOSTNAMEFILE"
-        echo $HOSTNAME > $HOSTNAMEFILE
-        logmsg "Done with $HOSTNAMEFILE, will take effect after reboot"
-    else
-        logmsg "$HOSTNAMEFILE already set for this hostname"
-    fi
+    # Forcibly set the hostname in the file, who cares if it's already there
+    logmsg "Setting hostname => $HOSTNAME"
+    echo $HOSTNAME > $HOSTNAMEFILE
 
     RET=$(grep kali $HOSTSFILE)
     RETVAL=$?
@@ -228,7 +236,7 @@ function set_hostname() {
 
 
 ###############################################################################
-#
+# Set the timezone of the machine
 ###############################################################################
 function set_timezone() {
     debug "${FUNCNAME[0]}(): entering"

@@ -40,7 +40,7 @@ CRONTABDIR="/var/spool/cron/crontabs"
 TMPLDIR="$DIRNAME/../tmpl"
 BACKUPDIR="/backup"
 
-LOGFILE="$DIRNAME/../log/firstboot.log"
+LOGFILE="setup.log"
 FIRSTBOOTFILE="/.firstboot"
 
 # Host name setting locations
@@ -197,15 +197,19 @@ function apt_install() {
 ###############################################################################
 function set_hostname() {
     debug "${FUNCNAME[0]}(): entering"
-    HOSTNAME=$($DIRNAME/../bin/hostname.py)
+    local MAC=`ifconfig eth0 | grep ether | awk '{print $2}' | awk -F: '{print $5$6}'`
+    local HOSTNAME="pi-$MAC"
     logmsg "Setting hostname => $HOSTNAME"
 
-    logmsg "Backing up current files"
-    logmsg "Backing up $HOSTSFILE"
-    run_command "cp $HOSTSFILE $BACKUPDIR/"
-
-    logmsg "Backing up $HOSTNAMEFILE"
-    run_command "cp $HOSTNAMEFILE $BACKUPDIR/"
+    RET=$(grep $HOSTNAME $HOSTNAMEFILE)
+    RETVAL=$?
+    if [[ $RETVAL = 1 ]]; then
+        logmsg "Modifying $HOSTNAMEFILE"
+        echo $HOSTNAME > $HOSTNAMEFILE
+        logmsg "Done with $HOSTNAMEFILE, will take effect after reboot"
+    else
+        logmsg "$HOSTNAMEFILE already set for this hostname"
+    fi
 
     RET=$(grep kali $HOSTSFILE)
     RETVAL=$?
@@ -218,21 +222,6 @@ function set_hostname() {
     else
         logmsg "$HOSTSFILE already set for this hostname"
     fi
-
-    RET=$(grep $HOSTNAME $HOSTNAMEFILE)
-    RETVAL=$?
-    if [[ $RETVAL = 1 ]]; then
-        logmsg "Modifying $HOSTNAMEFILE"
-        echo $HOSTNAME > $HOSTNAMEFILE
-        logmsg "Done with $HOSTNAMEFILE"
-    else
-        logmsg "$HOSTNAMEFILE already set for this hostname"
-    fi
-
-    logmsg "Running hostname command"
-    run_command "hostname $HOSTNAME"
-
-    logmsg "Done running hostname command"
 
     return 1
 }
